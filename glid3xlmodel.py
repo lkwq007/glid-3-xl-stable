@@ -11,7 +11,8 @@ from torch.nn import functional as F
 from torchvision import transforms
 from torchvision.transforms import functional as TF
 from torchvision.ops import masks_to_boxes
-
+from torch import autocast
+import contextlib
 from tqdm import tqdm
 
 import numpy as np
@@ -28,6 +29,9 @@ import argparse
 import pickle
 
 import os
+
+import skimage
+import skimage.measure
 
 from transformers import CLIPTokenizer, CLIPTextModel
 
@@ -201,7 +205,7 @@ class GlidModel:
             'num_heads': 8,
             'num_res_blocks': 2,
             'resblock_updown': False,
-            'use_fp16': False,
+            'use_fp16': True,
             'use_scale_shift_norm': False,
             'clip_embed_dim': None,
             'image_condition': True if model_state_dict['input_blocks.0.0.weight'].shape[1] == 8 else False,
@@ -223,6 +227,7 @@ class GlidModel:
         self.model_config=model_config
         if args.cpu:
             model_config['use_fp16'] = False
+            autocast = contextlib.nullcontext
         
         # Load models
         model, diffusion = create_model_and_diffusion(**model_config)
@@ -300,6 +305,10 @@ class GlidModel:
         sel_buffer = np.array(image_alpha_pil)
         img_arr = sel_buffer[:, :, 0:3]
         mask_arr = sel_buffer[:, :, -1]
+        # mask_arr = skimage.measure.block_reduce(mask_arr, (8, 8), np.min)
+        # mask_arr = mask_arr.repeat(8, axis=0).repeat(8, axis=1)
+        # mask_arr = mask_arr[:,:,np.newaxis].repeat(3,axis=2)
+        # img_arr[mask_arr<10]=0
         # image context
         if True:
             input_image_pil = Image.fromarray(img_arr)
@@ -317,6 +326,7 @@ class GlidModel:
             input_image *= 0.18215
 
             if args.mask:
+
                 mask_image = Image.fromarray(mask_arr).convert('L')
                 mask_image = mask_image.resize((input_image.shape[3],input_image.shape[2]), resample=SAMPLING_MODE)
                 mask = transforms.ToTensor()(mask_image).unsqueeze(0).to(device)
@@ -384,7 +394,7 @@ class GlidModel:
 
         init = None
         overlap = 32
-        if args.edit:
+        with autocast("cuda"):
             ret=[]
             for i in range(args.num_batches):
                 output = input_image.detach().clone()
