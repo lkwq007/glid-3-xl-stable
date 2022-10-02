@@ -34,6 +34,7 @@ from transformers import CLIPTokenizer, CLIPTextModel
 import tempfile
 from urllib.request import urlopen, Request
 import shutil
+from pathlib import Path
 
 try:
     SAMPLING_MODE = Image.Resampling.LANCZOS
@@ -253,7 +254,7 @@ class GlidModel:
             self.classifier=classifier
         
         # vae
-        kl_config = OmegaConf.load('kl.yaml')
+        kl_config = OmegaConf.load(os.path.join(Path(__file__).parent,'kl.yaml'))
         kl_sd = torch.load(args.kl_path, map_location="cpu")
         
         ldm = instantiate_from_config(kl_config.model)
@@ -471,7 +472,7 @@ class GlidModel:
                                 # save_sample(i, output, square=(offsetx, offsety))
 
                         ret.append(save_sample(i, output))
-        return ret
+        return ret[0]
 
 
 
