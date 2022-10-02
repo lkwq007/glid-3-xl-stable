@@ -275,7 +275,7 @@ class GlidModel:
         self.ldm=ldm
         self.diffusion=diffusion
     
-    def run(self,image_alpha_pil,prompt,guidance_scale=7.0,negative="",seed=-1,height=512,width=512,**kwargs):
+    def run(self,image_pil,prompt,guidance_scale=7.0,negative="",seed=-1,height=512,width=512,**kwargs):
         gc.collect()
         args=self.args
         args.width=width
@@ -293,7 +293,7 @@ class GlidModel:
         text_emb_blank = self.clip_transformer(input_ids=text_blank_tokens).last_hidden_state
 
         image_embed = None
-        image_alpha_pil = image_alpha_pil.resize(
+        image_alpha_pil = image_pil.resize(
             (width,height), resample=SAMPLING_MODE,
         )
         sel_buffer = np.array(image_alpha_pil)
