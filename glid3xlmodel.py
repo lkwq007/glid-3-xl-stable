@@ -301,7 +301,7 @@ class GlidModel:
         img_arr = sel_buffer[:, :, 0:3]
         mask_arr = sel_buffer[:, :, -1]
         # image context
-        if mask_arr.sum() > 0:
+        if True:
             input_image_pil = Image.fromarray(img_arr)
 
             im = transforms.ToTensor()(input_image_pil).unsqueeze(0).to(device)
