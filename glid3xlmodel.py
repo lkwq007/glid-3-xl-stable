@@ -472,7 +472,7 @@ class GlidModel:
                                 # save_sample(i, output, square=(offsetx, offsety))
 
                         ret.append(save_sample(i, output))
-        return ret[0]
+        return ret[0][0]
 
 
 
