@@ -281,17 +281,18 @@ class GlidModel:
         self.ldm=ldm
         self.diffusion=diffusion
     
-    def run(self,image_pil,prompt,guidance_scale=7.0,negative="",seed=-1,height=512,width=512,**kwargs):
+    def run(self,image_pil,prompt,guidance_scale=7.0,negative_prompt="",seed=-1,height=512,width=512,**kwargs):
         gc.collect()
         args=self.args
         args.width=width
         args.height=height
-        if seed >= 0:
+        args.batch_size=kwargs["generate_num"]
+        if kwargs["use_seed"]:
             torch.manual_seed(seed)
         device=self.device
         # clip context
         text = self.clip_tokenizer([prompt]*args.batch_size, truncation=True, max_length=77, return_length=True, return_overflowing_tokens=False, padding="max_length", return_tensors="pt")
-        text_blank = self.clip_tokenizer([args.negative]*args.batch_size, truncation=True, max_length=77, return_length=True, return_overflowing_tokens=False, padding="max_length", return_tensors="pt")
+        text_blank = self.clip_tokenizer([negative_prompt]*args.batch_size, truncation=True, max_length=77, return_length=True, return_overflowing_tokens=False, padding="max_length", return_tensors="pt")
         text_tokens = text["input_ids"].to(device)
         text_blank_tokens = text_blank["input_ids"].to(device)
 
@@ -482,7 +483,7 @@ class GlidModel:
                                 # save_sample(i, output, square=(offsetx, offsety))
 
                         ret.append(save_sample(i, output))
-        return ret[0][0]
+        return ret[0]
 
 
 
